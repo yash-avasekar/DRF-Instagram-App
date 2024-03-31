@@ -1,12 +1,16 @@
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate, login, logout
 
 from . import models
 from . import serializers
+from . import utils
 
 # Create your views here.
 
 
+# User Register View
 class UserRegisterView(generics.ListCreateAPIView):
     """
     API View for user registration.
@@ -27,32 +31,70 @@ class UserRegisterView(generics.ListCreateAPIView):
     search_fields = ["username", "name"]
 
     def create(self, request, *args, **kwargs):
+        return utils.userProfileCreate(self, request, models, Response, status)
+
+
+# User Login View
+class UserLoginView(generics.CreateAPIView):
+    """
+    API View for user login.
+
+    This view allows users to authenticate and obtain an authentication token for subsequent requests.
+
+    Attributes:
+        queryset (QuerySet): The queryset of User objects.
+        serializer_class (Serializer): The serializer class for user login.
+
+    Methods:
+        create(self, request, *args, **kwargs): Handles user login by calling the utility function userLogin.
+    """
+
+    queryset = models.User.objects.all()
+    serializer_class = serializers.UserLoginSerializer
+
+    def create(self, request, *args, **kwargs):
         """
-        Create a new user account.
+        Perform user login.
 
-        This method validates the input data and creates a new user account along with a corresponding profile.
+        This method authenticates the user based on the provided credentials and generates an authentication token.
+
+        Returns:
+            Response: The authentication token or an error message.
         """
-
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = models.User.objects.create_user(
-            email=serializer.validated_data.get("email"),  # type: ignore
-            username=serializer.validated_data.get("username"),  # type: ignore
-            password=serializer.validated_data.get("password"),  # type: ignore
-        )
-
-        models.Profile.objects.create(
-            user=user,
-            username=user.username,
-        ).save()
-
-        user.save()
-        return Response(
-            "User Account Created Successfully", status=status.HTTP_201_CREATED
-        )
+        return utils.userLogin(request, authenticate, login, Token, Response, status)
 
 
+# User Logout View
+class UserLogoutView(generics.CreateAPIView):
+    """
+    API View for user logout.
+
+    This view allows users to log out and invalidate their authentication token.
+
+    Attributes:
+        queryset (QuerySet): The queryset of User objects.
+        serializer_class (Serializer): The serializer class for user login.
+
+    Methods:
+        create(self, request): Handles user logout by calling the utility function userLogout.
+    """
+
+    queryset = models.User.objects.all()
+    serializer_class = serializers.UserLoginSerializer
+
+    def create(self, request):
+        """
+        Perform user logout.
+
+        This method invalidates the user's authentication token and logs them out.
+
+        Returns:
+            Response: A message confirming successful logout.
+        """
+        return utils.userLogout(request, Token, logout, Response, status)
+
+
+# Profile Viewsets
 class ProfileViewsets(viewsets.ModelViewSet):
     """
     API Viewset for managing user profiles.
@@ -85,38 +127,25 @@ class ProfileViewsets(viewsets.ModelViewSet):
         return Response("Method Not Allowed", status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, *args, **kwargs):
-        """
-        Update user profile.
-
-        This method updates the profile details including the username and name.
-        """
-        serializer = self.serializer_class(
-            self.get_object(), data=request.data, partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data.get("user")  # type: ignore
-        user.username = serializer.validated_data.get("username")  # type: ignore
-        user.first_name = serializer.validated_data.get("name")  # type: ignore
-        user.save()  # type: ignore
-        serializer.save()
-        return Response("Profile has been updated.", status=status.HTTP_200_OK)
+        return utils.updateProfile(self, request, Response, status)
 
     def perform_destroy(self, instance):
-        """
-        Delete user profile.
-
-        This method deletes the profile along with its associated user.
-        """
-        user = instance.user
-        user.delete()
-        instance.delete()
+        return utils.deleteUserProfile(self, instance)
 
 
 # Following View
 class FollowingViewsets(viewsets.ModelViewSet):
     queryset = models.Following.objects.all()
     serializer_class = serializers.FollowingSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # serializer.save(profile =)
+        print("*" * 50)
+        # print(self.get_object())
+        print("*" * 50)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         return Response(
@@ -128,6 +157,9 @@ class FollowingViewsets(viewsets.ModelViewSet):
 class FollowerViewsets(viewsets.ModelViewSet):
     queryset = models.Follower.objects.all()
     serializer_class = serializers.FollowerSerializer
+
+    def create(self, request, *args, **kwargs):
+        return Response("follower")
 
     def update(self, request, *args, **kwargs):
         return Response(
