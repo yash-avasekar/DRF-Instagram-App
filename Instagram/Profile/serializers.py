@@ -34,6 +34,13 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
 
+# User Login Serializer
+class UserLoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.User
+        fields = ["username", "password"]
+
+
 # Profile Serializer
 class ProfileSerializer(serializers.ModelSerializer):
     """
