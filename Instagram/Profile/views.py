@@ -1,9 +1,11 @@
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from . import models
 from . import serializers
 from . import utils
+from .permissions import IsOwnerOrReadOnly
 
 # Create your views here.
 
@@ -61,6 +63,7 @@ class UserRegisterView(generics.ListCreateAPIView):
 
     """
 
+    permission_classes = [AllowAny]
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     search_fields = ["username", "name"]
@@ -192,6 +195,7 @@ class ProfileViewsets(viewsets.ModelViewSet):
 
     """
 
+    permission_classes = [IsOwnerOrReadOnly, IsAuthenticated]
     queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
     lookup_field = "username"
