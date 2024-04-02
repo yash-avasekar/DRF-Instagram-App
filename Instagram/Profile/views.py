@@ -26,6 +26,8 @@ class ApiEndpoints(generics.ListAPIView):
                 Response: A JSON response containing a dictionary of API endpoints and their URLs.
     """
 
+    permission_classes = [AllowAny]
+
     def list(self, request):
         endpoints = {
             "register_user": "http://localhost:8000/api/register/user/",
@@ -106,6 +108,7 @@ class UserLoginView(generics.CreateAPIView):
 
     """
 
+    permission_classes = [AllowAny]
     queryset = models.User.objects.all()
     serializer_class = serializers.UserLoginSerializer
 
