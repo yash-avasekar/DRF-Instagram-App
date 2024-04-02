@@ -1,23 +1,34 @@
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate, login, logout
+
+from . import models
+
 # -----------------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------
 
 # User Viewset
 
 
-def userProfileCreate(self, request, models, Response, status):
+def userProfileCreate(self, request):
     """
-    Create a new user account.
+    Creates a user profile.
 
-    This method validates the input data and creates a new user account along with a corresponding profile.
+    Args:
+        self: The instance of the view.
+        request (Request): The HTTP request object.
+
+    Returns:
+        Response: A response indicating the status of the user profile creation process.
     """
-
     serializer = self.serializer_class(data=request.data)
     serializer.is_valid(raise_exception=True)
 
     user = models.User.objects.create_user(
-        email=serializer.validated_data.get("email"),  # type: ignore
-        username=serializer.validated_data.get("username"),  # type: ignore
-        password=serializer.validated_data.get("password"),  # type: ignore
+        email=serializer.validated_data.get("email"),
+        username=serializer.validated_data.get("username"),
+        password=serializer.validated_data.get("password"),
     )
 
     models.Profile.objects.create(
@@ -29,22 +40,15 @@ def userProfileCreate(self, request, models, Response, status):
     return Response("User Account Created Successfully", status=status.HTTP_201_CREATED)
 
 
-def userLogin(request, authenticate, login, Token, Response, status):
+def userLogin(request):
     """
-    Utility function for user login.
-
-    This function authenticates the user based on the provided credentials and generates an authentication token.
+    Authenticates and logs in a user.
 
     Args:
         request (Request): The HTTP request object.
-        authenticate (function): Function to authenticate user credentials.
-        login (function): Function to log in the user.
-        Token (Model): Token model for generating authentication tokens.
-        Response (class): Response class for returning HTTP responses.
-        status (module): Module for HTTP status codes.
 
     Returns:
-        Response: The authentication token or an error message.
+        Response: A response indicating the status of the login process.
     """
     user = authenticate(
         request,
@@ -55,27 +59,21 @@ def userLogin(request, authenticate, login, Token, Response, status):
     if user is not None:
         login(request, user)
         token, created = Token.objects.get_or_create(user=user)
-        return Response({"Token", f"Token {token.key}"}, status=status.HTTP_200_OK)
+        return Response({"Token": f"Token {token.key}"}, status=status.HTTP_200_OK)
     return Response(
         "Invalid Username or Password.", status=status.HTTP_401_UNAUTHORIZED
     )
 
 
-def userLogout(request, Token, logout, Response, status):
+def userLogout(request):
     """
-    Utility function for user logout.
-
-    This function invalidates the user's authentication token and logs them out.
+    Logs out a user.
 
     Args:
         request (Request): The HTTP request object.
-        Token (Model): Token model for managing authentication tokens.
-        logout (function): Function to log out the user.
-        Response (class): Response class for returning HTTP responses.
-        status (module): Module for HTTP status codes.
 
     Returns:
-        Response: A message confirming successful logout.
+        Response: A response indicating the status of the logout process.
     """
     Token.objects.filter(user=request.user).delete()
     logout(request)
@@ -88,31 +86,77 @@ def userLogout(request, Token, logout, Response, status):
 # Profile Viewset
 
 
-def updateProfile(self, request, Response, status):
+def updateProfile(self, request):
     """
-    Update user profile.
+    Updates a profile instance.
 
-    This method updates the profile details including the username and name.
+    Args:
+        self: The instance of the view.
+        request (Request): The HTTP request object.
+
+    Returns:
+        Response: A response indicating the status of the update process.
     """
     serializer = self.serializer_class(
         self.get_object(), data=request.data, partial=True
     )
     serializer.is_valid(raise_exception=True)
 
-    user = serializer.validated_data.get("user")  # type: ignore
-    user.username = serializer.validated_data.get("username")  # type: ignore
-    user.first_name = serializer.validated_data.get("name")  # type: ignore
-    user.save()  # type: ignore
+    user = serializer.validated_data.get("user")
+    user.username = serializer.validated_data.get("username")
+    user.first_name = serializer.validated_data.get("name")
+    user.save()
     serializer.save()
     return Response("Profile has been updated.", status=status.HTTP_200_OK)
 
 
-def deleteUserProfile(self, instance):
+def deleteUserProfile(instance):
     """
-    Delete user profile.
+    Delete user profile and associated user.
 
-    This method deletes the profile along with its associated user.
+    This function deletes the profile instance along with its associated user from the database.
+
+    Args:
+        instance: The profile instance to be deleted.
+
+    Returns:
+        None
     """
     user = instance.user
     user.delete()
     instance.delete()
+
+
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+
+# Following Viewset
+
+
+def follow(self, request):
+    """
+    Follows or unfollows a user based on the request data.
+
+    Args:
+        self: The instance of the view.
+        request (Request): The HTTP request object.
+
+    Returns:
+        Response: A response indicating the status of the follow operation.
+    """
+    serializer = self.get_serializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    follow_profile = request.data.get("following")
+    is_following = self.get_queryset().filter(
+        follower=request.user.Profile, following=follow_profile
+    )
+
+    if is_following.exists() is not True:
+        serializer.save(follower=request.user.Profile)
+        return Response(
+            f"Following {follow_profile}",
+            status=status.HTTP_201_CREATED,
+        )
+    is_following.delete()
+    return Response(f"Unfollowed {follow_profile}", status=status.HTTP_201_CREATED)
