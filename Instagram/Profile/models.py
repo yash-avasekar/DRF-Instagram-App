@@ -12,14 +12,14 @@ class Profile(models.Model):
 
     Attributes:
         user (User): The user associated with this profile.
-        profile_picture (Image): The profile picture of the user.
-        username (str): The username of the user. It must be unique.
+        profile_picture (ImageField): The profile picture of the user.
+        username (str): The unique username of the user.
         name (str): The name of the user.
         bio (str): A short biography or description of the user.
         website (str): The website URL of the user.
-        created_at (DateTime): The date and time when the profile was created.
-        updated_at (DateTime): The date and time when the profile was last updated.
-        id (UUID): The primary key and universally unique identifier for the profile.
+        created_at (DateTimeField): The date and time when the profile was created.
+        updated_at (DateTimeField): The date and time when the profile was last updated.
+        id (UUIDField): The universally unique identifier for the profile.
 
     Methods:
         __str__(): Returns a string representation of the profile.
@@ -32,7 +32,7 @@ class Profile(models.Model):
     username = models.CharField(null=False, blank=False, unique=True, max_length=50)
     name = models.CharField(null=True, blank=True, max_length=100)
     bio = models.TextField(null=True, blank=True)
-    website = models.URLField(null=True, blank=True, max_length=200)
+    website = models.URLField(null=True, blank=True, max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     id = models.UUIDField(
@@ -41,26 +41,44 @@ class Profile(models.Model):
 
     def __str__(self):
         """
-        String representation of the model instance.
+        Returns a string representation of the profile.
+
+        Returns:
+            str: The username of the profile.
         """
 
         return self.username
 
 
-# Following Model
-class Following(models.Model):
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    following = models.OneToOneField(
-        Profile, on_delete=models.CASCADE, related_name="following_profile"
+class Relation(models.Model):
+    """
+    Represents a relationship between two profiles, indicating one profile follows another.
+
+    Attributes:
+        following (ForeignKey): The profile being followed.
+        follower (ForeignKey): The profile following another.
+
+    Meta:
+        unique_together (list of str): Ensures each combination of following and follower is unique.
+
+    Methods:
+        __str__(self): Returns a string representation of the relation.
+    """
+
+    following = models.ForeignKey(Profile, models.CASCADE, related_name="follower")
+    follower = models.ForeignKey(Profile, models.CASCADE, related_name="following")
+    id = models.UUIDField(
+        default=uuid.uuid4, editable=False, unique=True, primary_key=True
     )
 
+    class Meta:
+        unique_together = ["following", "follower"]
 
-# Follower Model
-class Follower(models.Model):
-    profile = models.ForeignKey(
-        Profile,
-        on_delete=models.CASCADE,
-    )
-    follower = models.OneToOneField(
-        Profile, on_delete=models.CASCADE, related_name="follower_profile"
-    )
+    def __str__(self):
+        """
+        Returns a string representation of the relation.
+
+        Returns:
+            str: A string indicating the follower is following the following.
+        """
+        return f"{self.follower} is following {self.following}"
