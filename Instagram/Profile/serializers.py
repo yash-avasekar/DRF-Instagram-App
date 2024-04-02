@@ -75,18 +75,62 @@ class ProfileSerializer(serializers.ModelSerializer):
         """
         request = self.context.get("request")
         if request is not None:
-            return request.build_absolute_uri(f"/api/profile/{instance.username}/")
+            return request.build_absolute_uri(
+                f"/api/profile/profile/{instance.username}/"
+            )
 
 
 # Following Serializer
 class FollowingSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
     class Meta:
-        model = models.Following
+        model = models.Relation
         fields = "__all__"
+        extra_kwargs = {
+            "follower": {"read_only": True},
+        }
+
+    def get_url(self, instance):
+        """
+        Get the URL for the profile.
+
+        This method returns the URL for the profile based on the request context.
+
+        Args:
+            instance (Profile): The Profile object.
+
+        Returns:
+            str: The URL for the profile.
+        """
+        request = self.context.get("request")
+        if request is not None:
+            return request.build_absolute_uri(f"/api/profile/followings/{instance.id}/")
 
 
 # Follower Serializer
 class FollowerSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
     class Meta:
-        model = models.Follower
+        model = models.Relation
         fields = "__all__"
+        extra_kwargs = {
+            "following": {"read_only": True},
+        }
+
+    def get_url(self, instance):
+        """
+        Get the URL for the profile.
+
+        This method returns the URL for the profile based on the request context.
+
+        Args:
+            instance (Profile): The Profile object.
+
+        Returns:
+            str: The URL for the profile.
+        """
+        request = self.context.get("request")
+        if request is not None:
+            return request.build_absolute_uri(f"/api/profile/followers/{instance.id}/")
