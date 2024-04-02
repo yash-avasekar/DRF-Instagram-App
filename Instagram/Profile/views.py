@@ -1,7 +1,5 @@
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate, login, logout
 
 from . import models
 from . import serializers
@@ -10,20 +8,57 @@ from . import utils
 # Create your views here.
 
 
+# Endpoints
+class ApiEndpoints(generics.ListAPIView):
+    """
+    A view to list available API endpoints along with their URLs.
+
+    Attributes:
+        None
+
+    Methods:
+        list(self, request): Retrieves a dictionary containing API endpoints and their URLs.
+            Args:
+                request: The request sent by the client.
+            Returns:
+                Response: A JSON response containing a dictionary of API endpoints and their URLs.
+    """
+
+    def list(self, request):
+        endpoints = {
+            "register_user": "http://localhost:8000/api/register/user/",
+            "user_login": "http://localhost:8000/api/user/login/",
+            "user_logout": "http://localhost:8000/api/user/logout/",
+            "profile": "http://localhost:8000/api/profile/profile/",
+            "profile_followings": "http://localhost:8000/api/profile/followings/",
+            "profile_followers": "http://localhost:8000/api/profile/followers/",
+        }
+        return Response(endpoints, status=status.HTTP_200_OK)
+
+
 # User Register View
 class UserRegisterView(generics.ListCreateAPIView):
     """
-    API View for user registration.
+    A view for registering new users.
 
-    This view allows users to register by providing their email, username, and password.
+    Inherits from:
+        generics.ListCreateAPIView
 
     Attributes:
         queryset (QuerySet): The queryset of User objects.
-        serializer_class (Serializer): The serializer class for User objects.
-        search_fields (list): The fields used for searching users.
+        serializer_class (Serializer): The serializer class for serializing User objects.
+        search_fields (list of str): The fields to search against.
 
     Methods:
-        create(self, request, *args, **kwargs): Handles user registration by creating a new User and Profile object.
+        create(self, request, *args, **kwargs):
+            Handles the creation of a new user.
+            Args:
+                request (Request): The HTTP request object.
+                *args: Additional positional arguments.
+                **kwargs: Additional keyword arguments.
+            Returns:
+                Response: A response indicating the status of the user creation process.
+
     """
 
     queryset = models.User.objects.all()
@@ -31,22 +66,41 @@ class UserRegisterView(generics.ListCreateAPIView):
     search_fields = ["username", "name"]
 
     def create(self, request, *args, **kwargs):
-        return utils.userProfileCreate(self, request, models, Response, status)
+        """
+        Handles the creation of a new user.
+
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A response indicating the status of the user creation process.
+        """
+        return utils.userProfileCreate(self, request)
 
 
-# User Login View
 class UserLoginView(generics.CreateAPIView):
     """
-    API View for user login.
+    A view for user authentication and login.
 
-    This view allows users to authenticate and obtain an authentication token for subsequent requests.
+    Inherits from:
+        generics.CreateAPIView
 
     Attributes:
         queryset (QuerySet): The queryset of User objects.
-        serializer_class (Serializer): The serializer class for user login.
+        serializer_class (Serializer): The serializer class for serializing User objects.
 
     Methods:
-        create(self, request, *args, **kwargs): Handles user login by calling the utility function userLogin.
+        create(self, request, *args, **kwargs):
+            Handles the user login process.
+            Args:
+                request (Request): The HTTP request object.
+                *args: Additional positional arguments.
+                **kwargs: Additional keyword arguments.
+            Returns:
+                Response: A response indicating the status of the login process.
+
     """
 
     queryset = models.User.objects.all()
@@ -54,29 +108,38 @@ class UserLoginView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """
-        Perform user login.
+        Handles the user login process.
 
-        This method authenticates the user based on the provided credentials and generates an authentication token.
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            Response: The authentication token or an error message.
+            Response: A response indicating the status of the login process.
         """
-        return utils.userLogin(request, authenticate, login, Token, Response, status)
+        return utils.userLogin(request)
 
 
 # User Logout View
 class UserLogoutView(generics.CreateAPIView):
     """
-    API View for user logout.
+    A view for user logout.
 
-    This view allows users to log out and invalidate their authentication token.
+    Inherits from:
+        generics.CreateAPIView
 
     Attributes:
         queryset (QuerySet): The queryset of User objects.
-        serializer_class (Serializer): The serializer class for user login.
+        serializer_class (Serializer): The serializer class for serializing User objects.
 
     Methods:
-        create(self, request): Handles user logout by calling the utility function userLogout.
+        create(self, request):
+            Handles the user logout process.
+            Args:
+                request (Request): The HTTP request object.
+            Returns:
+                Response: A response indicating the status of the logout process.
     """
 
     queryset = models.User.objects.all()
@@ -84,33 +147,49 @@ class UserLogoutView(generics.CreateAPIView):
 
     def create(self, request):
         """
-        Perform user logout.
+        Handles the user logout process.
 
-        This method invalidates the user's authentication token and logs them out.
+        Args:
+            request (Request): The HTTP request object.
 
         Returns:
-            Response: A message confirming successful logout.
+            Response: A response indicating the status of the logout process.
         """
-        return utils.userLogout(request, Token, logout, Response, status)
+        return utils.userLogout(request)
 
 
 # Profile Viewsets
 class ProfileViewsets(viewsets.ModelViewSet):
     """
-    API Viewset for managing user profiles.
+    A viewset for handling profile-related operations.
 
-    This viewset provides CRUD operations for managing user profiles.
+    Inherits from:
+        viewsets.ModelViewSet
 
     Attributes:
         queryset (QuerySet): The queryset of Profile objects.
-        serializer_class (Serializer): The serializer class for Profile objects.
-        lookup_field (str): The field used for looking up profiles.
-        search_fields (list): The fields used for searching profiles.
+        serializer_class (Serializer): The serializer class for serializing Profile objects.
+        lookup_field (str): The field used to look up Profile objects.
+        search_fields (list of str): The fields to search against.
 
     Methods:
-        create(self, request, *args, **kwargs): Method not allowed.
-        update(self, request, *args, **kwargs): Updates the profile details.
-        perform_destroy(self, instance): Deletes the profile and its associated user.
+        create(self, request, *args, **kwargs):
+            Returns a method not allowed response since creation is not allowed via this viewset.
+
+        update(self, request, *args, **kwargs):
+            Handles updating a profile instance.
+            Args:
+                request (Request): The HTTP request object.
+                *args: Additional positional arguments.
+                **kwargs: Additional keyword arguments.
+            Returns:
+                Response: A response indicating the status of the update process.
+
+        perform_destroy(self, instance):
+            Performs the deletion of a profile instance.
+            Args:
+                instance: The profile instance to be deleted.
+
     """
 
     queryset = models.Profile.objects.all()
@@ -120,48 +199,192 @@ class ProfileViewsets(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """
-        Method not allowed.
+        Returns a method not allowed response since creation is not allowed via this viewset.
 
-        This method returns an HTTP 405 Method Not Allowed response as profile creation is not supported.
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A method not allowed response.
         """
-        return Response("Method Not Allowed", status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, *args, **kwargs):
-        return utils.updateProfile(self, request, Response, status)
+        """
+        Handles updating a profile instance.
+
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A response indicating the status of the update process.
+        """
+        return utils.updateProfile(self, request)
 
     def perform_destroy(self, instance):
-        return utils.deleteUserProfile(self, instance)
+        """
+        Performs the deletion of a profile instance.
+
+        Args:
+            instance: The profile instance to be deleted.
+        """
+        return utils.deleteUserProfile(instance)
 
 
 # Following View
-class FollowingViewsets(viewsets.ModelViewSet):
-    queryset = models.Following.objects.all()
+class FollowingsViewsets(viewsets.ModelViewSet):
+    """
+    A viewset for managing user followings.
+
+    Inherits from:
+        viewsets.ModelViewSet
+
+    Attributes:
+        queryset (QuerySet): The queryset of Relation objects.
+        serializer_class (Serializer): The serializer class for serializing Relation objects.
+
+    Methods:
+        get_queryset(self):
+            Retrieves the queryset of followings associated with the current user.
+            Returns:
+                QuerySet: The filtered queryset.
+
+        create(self, request, *args, **kwargs):
+            Handles following a user.
+            Args:
+                request (Request): The HTTP request object.
+                *args: Additional positional arguments.
+                **kwargs: Additional keyword arguments.
+            Returns:
+                Response: A response indicating the status of the follow operation.
+
+        update(self, request, *args, **kwargs):
+            Returns a method not allowed response since updating is not allowed via this viewset.
+
+        destroy(self, request, *args, **kwargs):
+            Returns a method not allowed response since deleting is not allowed via this viewset.
+    """
+
+    queryset = models.Relation.objects.all()
     serializer_class = serializers.FollowingSerializer
 
+    def get_queryset(self):
+        """
+        Retrieves the queryset of followings associated with the current user.
+
+        Returns:
+            QuerySet: The filtered queryset.
+        """
+        return models.Relation.objects.filter(follower=self.request.user.Profile)  # type: ignore
+
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        # serializer.save(profile =)
-        print("*" * 50)
-        # print(self.get_object())
-        print("*" * 50)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        """
+        Handles following a user.
+
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A response indicating the status of the follow operation.
+        """
+        return utils.follow(self, request)
 
     def update(self, request, *args, **kwargs):
-        return Response(
-            "Method Not Allowed.", status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+        """
+        Returns a method not allowed response since updating is not allowed via this viewset.
+
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A method not allowed response.
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Returns a method not allowed response since deleting is not allowed via this viewset.
+
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A method not allowed response.
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 # Follower View
-class FollowerViewsets(viewsets.ModelViewSet):
-    queryset = models.Follower.objects.all()
+class FollowersViewsets(viewsets.ModelViewSet):
+    """
+    A viewset for managing user followers.
+
+    Inherits from:
+        viewsets.ModelViewSet
+
+    Attributes:
+        queryset (QuerySet): The queryset of Relation objects.
+        serializer_class (Serializer): The serializer class for serializing Follower objects.
+
+    Methods:
+        get_queryset(self):
+            Retrieves the queryset of followers associated with the current user.
+            Returns:
+                QuerySet: The filtered queryset.
+
+        create(self, request, *args, **kwargs):
+            Returns a method not allowed response since creation is not allowed via this viewset.
+
+        update(self, request, *args, **kwargs):
+            Returns a method not allowed response since updating is not allowed via this viewset.
+    """
+
+    queryset = models.Relation.objects.all()
     serializer_class = serializers.FollowerSerializer
 
+    def get_queryset(self):
+        """
+        Retrieves the queryset of followers associated with the current user.
+
+        Returns:
+            QuerySet: The filtered queryset.
+        """
+        return models.Relation.objects.filter(following=self.request.user.Profile)  # type: ignore
+
     def create(self, request, *args, **kwargs):
-        return Response("follower")
+        """
+        Returns a method not allowed response since creation is not allowed via this viewset.
+
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A method not allowed response.
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, *args, **kwargs):
-        return Response(
-            "Method Not Allowed.", status=status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+        """
+        Returns a method not allowed response since updating is not allowed via this viewset.
+
+        Args:
+            request (Request): The HTTP request object.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response: A method not allowed response.
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
