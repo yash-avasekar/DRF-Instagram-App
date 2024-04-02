@@ -7,12 +7,16 @@ from . import views
 
 router = DefaultRouter()
 router.register("profile", views.ProfileViewsets)
-router.register("following", views.FollowingViewsets)
-router.register("follower", views.FollowerViewsets)
+router.register("followings", views.FollowingsViewsets, basename="profile-followings")
+router.register("followers", views.FollowersViewsets, basename="profile-followers")
 
 urlpatterns = [
+    # list endpoinsts
+    path("", views.ApiEndpoints.as_view()),
+    # user endpoints
     path("register/user/", views.UserRegisterView.as_view()),
     path("user/login/", views.UserLoginView.as_view()),
     path("user/logout/", views.UserLogoutView.as_view()),
-    path("user/", include(router.urls)),
+    # profile endpoints
+    path("profile/", include(router.urls)),
 ]
