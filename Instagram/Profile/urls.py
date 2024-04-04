@@ -11,8 +11,6 @@ router.register("followings", views.FollowingsViewsets, basename="profile-follow
 router.register("followers", views.FollowersViewsets, basename="profile-followers")
 
 urlpatterns = [
-    # list endpoinsts
-    path("", views.ApiEndpoints.as_view()),
     # user endpoints
     path("register/user/", views.UserRegisterView.as_view()),
     path("user/login/", views.UserLoginView.as_view()),

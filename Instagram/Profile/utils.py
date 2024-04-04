@@ -153,9 +153,6 @@ def follow(self, request):
         follower=request.user.Profile, following=follow_profile
     )
 
-    if is_following == is_following:
-        return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
-
     if is_following.exists() is not True:
         serializer.save(follower=request.user.Profile)
         return Response(
