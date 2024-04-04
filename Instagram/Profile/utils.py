@@ -148,9 +148,13 @@ def follow(self, request):
     serializer.is_valid(raise_exception=True)
 
     follow_profile = request.data.get("following")
+
     is_following = self.get_queryset().filter(
         follower=request.user.Profile, following=follow_profile
     )
+
+    if is_following == is_following:
+        return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
 
     if is_following.exists() is not True:
         serializer.save(follower=request.user.Profile)
