@@ -32,6 +32,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "Comments",
+    "Likes",
+    "Posts",
     "Profile",
     "django_filters",
     "corsheaders",

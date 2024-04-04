@@ -18,6 +18,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from . import views
+
 urlpatterns = [
+    path("", views.ApiEndpoints.as_view()),
     path("api/", include("Profile.urls")),
+    path("api/", include("Posts.urls")),
+    path("api/", include("Likes.urls")),
+    path("api/", include("Comments.urls")),
 ]
