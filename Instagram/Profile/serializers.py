@@ -56,10 +56,21 @@ class ProfileSerializer(serializers.ModelSerializer):
     """
 
     url = serializers.SerializerMethodField()
+    followers = serializers.SerializerMethodField()  # type:ignore
+    following = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Profile
-        fields = "__all__"
+        fields = [
+            "id",
+            "url",
+            "profile_picture",
+            "username",
+            "name",
+            "bio",
+            "followers",
+            "following",
+        ]
 
     def get_url(self, instance):
         """
@@ -78,6 +89,12 @@ class ProfileSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(
                 f"/api/profile/profile/{instance.username}/"
             )
+
+    def get_followers(self, instance):
+        return instance.follower.count()
+
+    def get_following(self, instance):
+        return instance.following.count()
 
 
 # Following Serializer
